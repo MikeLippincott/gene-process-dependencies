@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gene-dependency-webapp"
+version = "0.1.0"
+description = "Interactive Streamlit webapp for exploring gene dependency plots"
+requires-python = ">=3.12"
+dependencies = [
+	"streamlit",
+	"plotly",
+	"pandas",
+	"numpy",
+	"scikit-learn",
+	"pyarrow",
+	"umap-learn",
+	"matplotlib>=3.10.9",
+	"ipykernel>=7.2.0",
+	"ipywidgets>=8.1.8",
+]
+
+[tool.setuptools]
+py-modules = ["app", "app_utils"]

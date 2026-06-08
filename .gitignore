@@ -4,3 +4,5 @@
 __pycache__
 2.train-VAE/parameter_sweep
 .DS_Store
+9.webapp/gene_dependency_webapp.egg-info
+*.pyc

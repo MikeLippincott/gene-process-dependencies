@@ -25,12 +25,12 @@ Source: [Cancer Dependency Map resource](https://depmap.org/portal/download/).
 
 This repository is structured as follows:
 
-| Order | Module | Description |
-| :---- | :----- | :---------- |
-| [0.data-download](0.data-download/) | Download required files | Download gene effect data and cell line information, and download gene QC and construct gene filtering dictionary |
-| [1.data-exploration](1.data-exploration/) | Explore and visualize data | Create figures to visualize cell line information and split gene effect data into balanced test and train dataframes |
-| [2.train-VAE](2.train-VAE/) | Train Beta VAE and Beta TC VAE models | Optimize hyperparameters and train Beta Variational Autoencoder/Beta Total Correlation Variational Autoencoder with optimal hyperparameters and previously created test and train dataframes |
-| [3.analysis](3.analysis/) | Analyze Beta VAE and Beta TC VAE Outputs | Generate heatmaps to visualize death windows by cell line and by genes, run Gene Set Enrichment Analysis with BVAE and BTCVAE synthesized data, and analyze extracted BVAE/BTCVAE latent space data to compare similarity of cancer between different demographics |
+| Order                                     | Module                                   | Description                                                                                                                                                                                                                                                        |
+| :---------------------------------------- | :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [0.data-download](0.data-download/)       | Download required files                  | Download gene effect data and cell line information, and download gene QC and construct gene filtering dictionary                                                                                                                                                  |
+| [1.data-exploration](1.data-exploration/) | Explore and visualize data               | Create figures to visualize cell line information and split gene effect data into balanced test and train dataframes                                                                                                                                               |
+| [2.train-VAE](2.train-VAE/)               | Train Beta VAE and Beta TC VAE models    | Optimize hyperparameters and train Beta Variational Autoencoder/Beta Total Correlation Variational Autoencoder with optimal hyperparameters and previously created test and train dataframes                                                                       |
+| [3.analysis](3.analysis/)                 | Analyze Beta VAE and Beta TC VAE Outputs | Generate heatmaps to visualize death windows by cell line and by genes, run Gene Set Enrichment Analysis with BVAE and BTCVAE synthesized data, and analyze extracted BVAE/BTCVAE latent space data to compare similarity of cancer between different demographics |
 
 ## Environment Setup
 
@@ -50,3 +50,18 @@ conda env create --yes --file environment.yml
 # Run this command to activate the conda environment for Gene Dependency Representations
 
 conda activate gene_dependency_representations
+```
+
+## Webapp
+
+This repository now includes a Streamlit dashboard for interactive exploration of the parquet-backed plot outputs in `9.webapp/`.
+
+Run it from the repository root after activating the environment:
+
+```sh
+just run
+```
+
+Use `just build` to syntax-check the app and `just deploy` to run Streamlit in headless mode on port `8501` by default.
+
+The dashboard currently exposes the Reactome, CORUM, and Drug result tables with toggleable Projection, Radar, and Heatmap views.
