@@ -2,6 +2,8 @@
 Gene Process Dependency Explorer
 """
 
+import os
+import pathlib
 import textwrap
 
 import matplotlib.pyplot as plt
@@ -26,6 +28,9 @@ from app_utils import (
 from plotly.subplots import make_subplots
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+
+BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__))).parent
+
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(

@@ -1,4 +1,5 @@
 import colorsys
+import os
 import pathlib
 import random
 import textwrap
@@ -11,6 +12,10 @@ import plotly.express as px
 import plotly.graph_objs as go
 from ipywidgets import widgets
 from sklearn.decomposition import PCA
+
+# Go up one level to repo root, then into data/
+BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
+print(f"Base directory for data loading: {BASE_DIR}")
 
 
 # ── Load & filter data ────────────────────────────────────────────────────────
@@ -25,13 +30,13 @@ def load_data():
     ).resolve()
     dependency_df, gene_dict_df = load_model_data(dependency_file, gene_dict_file)
     dependency_df = dependency_df.set_index("ModelID")
-    cancer_type_input_file = pathlib.Path("./data/Model.parquet")
+    cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
     cancer_type_df = pd.read_parquet(cancer_type_input_file)
 
 
 def latent_load_data():
     # latent space data
-    cancer_type_input_file = pathlib.Path("./data/Model.parquet")
+    cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
     cancer_type_df = pd.read_parquet(cancer_type_input_file)
 
     reactome_dims = pathlib.Path(
@@ -102,7 +107,7 @@ def single_load_data():
     ).resolve()
     dependency_df, gene_dict_df = load_model_data(dependency_file, gene_dict_file)
     dependency_df = dependency_df.set_index("ModelID")
-    cancer_type_input_file = pathlib.Path("./data/Model.parquet")
+    cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
     cancer_type_df = pd.read_parquet(cancer_type_input_file)
     combined_df = dependency_df.merge(
         cancer_type_df[["ModelID", "OncotreePrimaryDisease"]], on="ModelID", how="left"
