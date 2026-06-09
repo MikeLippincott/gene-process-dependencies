@@ -213,57 +213,59 @@ with tab_single:
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
         selected_diseases_single = disease_controls("single")
         st.markdown("</div>", unsafe_allow_html=True)
+    if len(selected_diseases_single) == 0:
+        st.warning("Please select at least one primary disease to display the plot.")
+    else:
+        combined_df = single_load_data()
+        combined_df = combined_df[
+            combined_df["OncotreePrimaryDisease"].isin(selected_diseases_single)
+        ]
 
-    combined_df = single_load_data()
-    combined_df = combined_df[
-        combined_df["OncotreePrimaryDisease"].isin(selected_diseases_single)
-    ]
+        gene_cols = combined_df.columns.drop(["ModelID", "OncotreePrimaryDisease"])
+        pca_input = combined_df[gene_cols].apply(pd.to_numeric, errors="coerce")
+        pca = PCA(n_components=2, random_state=0)
+        pca_embedding = pca.fit_transform(pca_input)
+        combined_df["PCA1"] = pca_embedding[:, 0]
+        combined_df["PCA2"] = pca_embedding[:, 1]
 
-    gene_cols = combined_df.columns.drop(["ModelID", "OncotreePrimaryDisease"])
-    pca_input = combined_df[gene_cols].apply(pd.to_numeric, errors="coerce")
-    pca = PCA(n_components=2, random_state=0)
-    pca_embedding = pca.fit_transform(pca_input)
-    combined_df["PCA1"] = pca_embedding[:, 0]
-    combined_df["PCA2"] = pca_embedding[:, 1]
-
-    cancer_types = combined_df["OncotreePrimaryDisease"].unique()
-    color_map = (
-        px.colors.qualitative.Plotly
-        + px.colors.qualitative.Light24
-        + px.colors.qualitative.Dark24
-    )
-    highlight_color_map = {
-        c: color_map[i % len(color_map)] for i, c in enumerate(cancer_types)
-    }
-
-    traces = []
-    for cancer in cancer_types:
-        df_sub = combined_df[combined_df["OncotreePrimaryDisease"] == cancer]
-        traces.append(
-            go.Scatter(
-                x=df_sub["PCA1"],
-                y=df_sub["PCA2"],
-                mode="markers",
-                name=cancer,
-                marker=dict(size=7, color=highlight_color_map[cancer]),
-                text=[f"{cancer} | {m}" for m in df_sub["ModelID"]],
-                hoverinfo="text",
-            )
+        cancer_types = combined_df["OncotreePrimaryDisease"].unique()
+        color_map = (
+            px.colors.qualitative.Plotly
+            + px.colors.qualitative.Light24
+            + px.colors.qualitative.Dark24
         )
+        highlight_color_map = {
+            c: color_map[i % len(color_map)] for i, c in enumerate(cancer_types)
+        }
 
-    fig_single = go.Figure(data=traces)
-    fig_single.update_layout(
-        paper_bgcolor="#0d1117",
-        plot_bgcolor="#0d1117",
-        font=dict(color="#e6edf3"),
-        xaxis=dict(gridcolor="#21262d"),
-        yaxis=dict(gridcolor="#21262d"),
-        legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
-        height=1200,
-        margin=dict(l=40, r=40, t=40, b=40),
-        width=800,
-    )
-    st.plotly_chart(fig_single, use_container_width=True)
+        traces = []
+        for cancer in cancer_types:
+            df_sub = combined_df[combined_df["OncotreePrimaryDisease"] == cancer]
+            traces.append(
+                go.Scatter(
+                    x=df_sub["PCA1"],
+                    y=df_sub["PCA2"],
+                    mode="markers",
+                    name=cancer,
+                    marker=dict(size=7, color=highlight_color_map[cancer]),
+                    text=[f"{cancer} | {m}" for m in df_sub["ModelID"]],
+                    hoverinfo="text",
+                )
+            )
+
+        fig_single = go.Figure(data=traces)
+        fig_single.update_layout(
+            paper_bgcolor="#0d1117",
+            plot_bgcolor="#0d1117",
+            font=dict(color="#e6edf3"),
+            xaxis=dict(gridcolor="#21262d"),
+            yaxis=dict(gridcolor="#21262d"),
+            legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+            height=1200,
+            margin=dict(l=40, r=40, t=40, b=40),
+            width=800,
+        )
+        st.plotly_chart(fig_single, use_container_width=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -280,27 +282,31 @@ with tab_latent:
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
         selected_diseases_latent = disease_controls("latent")
         st.markdown("</div>", unsafe_allow_html=True)
+    if len(selected_diseases_single) == 0:
+        st.warning("Please select at least one primary disease to display the plot.")
+    else:
+        reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
+        reactome_matrix = reactome_matrix[
+            reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
+        ]
+        corum_matrix = corum_matrix[
+            corum_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
+        ]
+        drug_matrix = drug_matrix[
+            drug_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
+        ]
 
-    reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
-    reactome_matrix = reactome_matrix[
-        reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-    ]
-    corum_matrix = corum_matrix[
-        corum_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-    ]
-    drug_matrix = drug_matrix[
-        drug_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-    ]
+        reactome_fig, _ = make_dropdown_pca_with_selection(
+            reactome_matrix, "PCA: Reactome Subset"
+        )
+        corum_fig, _ = make_dropdown_pca_with_selection(
+            corum_matrix, "PCA: CORUM Subset"
+        )
+        drug_fig, _ = make_dropdown_pca_with_selection(drug_matrix, "PCA: Drug Subset")
 
-    reactome_fig, _ = make_dropdown_pca_with_selection(
-        reactome_matrix, "PCA: Reactome Subset"
-    )
-    corum_fig, _ = make_dropdown_pca_with_selection(corum_matrix, "PCA: CORUM Subset")
-    drug_fig, _ = make_dropdown_pca_with_selection(drug_matrix, "PCA: Drug Subset")
-
-    st.plotly_chart(reactome_fig, use_container_width=True)
-    st.plotly_chart(corum_fig, use_container_width=True)
-    st.plotly_chart(drug_fig, use_container_width=True)
+        st.plotly_chart(reactome_fig, use_container_width=True)
+        st.plotly_chart(corum_fig, use_container_width=True)
+        st.plotly_chart(drug_fig, use_container_width=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
