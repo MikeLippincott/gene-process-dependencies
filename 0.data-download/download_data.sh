@@ -6,7 +6,7 @@ jupyter nbconvert --to=script --FilesWriter.build_directory=scripts/ *.ipynb
 # check if the data are present
 # if not then run the download scripts
 # if data are present then skip the download scripts
-if [ ! -f "data/metadata_df.parquet" ] || [ ! -f "data/Model.parquet" ]; then
+if [ ! -f "data/Model.parquet" ]; then
     echo "Data files not found. Running data download scripts..."
 
     uv run python scripts/1.data_downloader.py
@@ -16,3 +16,8 @@ if [ ! -f "data/metadata_df.parquet" ] || [ ! -f "data/Model.parquet" ]; then
 else
     echo "Data files already exist. Skipping data download."
 fi
+
+
+cp data/Model.parquet ../9.webapp/data/Model.parquet
+cp data/CRISPRGeneEffect.parquet ../9.webapp/data/CRISPRGeneEffect.parquet
+cp data/CRISPR_gene_dictionary.parquet ../9.webapp/data/CRISPR_gene_dictionary.parquet
