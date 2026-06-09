@@ -15,19 +15,18 @@ from sklearn.decomposition import PCA
 
 # Go up one level to repo root, then into data/
 BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
-print(f"Base directory for data loading: {BASE_DIR}")
+REPO_ROOT = BASE_DIR.parent  # goes up from 9.webapp/ to repo root
+print(f"Base directory: {BASE_DIR}")
+print(f"Repo root: {REPO_ROOT}")
 
 
 # ── Load & filter data ────────────────────────────────────────────────────────
 def load_data():
     # Load dependency data
-    data_directory = pathlib.Path("./data").resolve()
-    dependency_file = pathlib.Path(
-        f"{data_directory}/CRISPRGeneEffect.parquet"
-    ).resolve()
-    gene_dict_file = pathlib.Path(
-        f"{data_directory}/CRISPR_gene_dictionary.parquet"
-    ).resolve()
+    data_directory = BASE_DIR / "data"
+    dependency_file = data_directory / "CRISPRGeneEffect.parquet"
+    gene_dict_file = data_directory / "CRISPR_gene_dictionary.parquet"
+    cancer_type_input_file = BASE_DIR / "data" / "Model.parquet"
     dependency_df, gene_dict_df = load_model_data(dependency_file, gene_dict_file)
     dependency_df = dependency_df.set_index("ModelID")
     cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
@@ -36,18 +35,20 @@ def load_data():
 
 def latent_load_data():
     # latent space data
-    cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
+    cancer_type_input_file = BASE_DIR / "data" / "Model.parquet"
     cancer_type_df = pd.read_parquet(cancer_type_input_file)
 
-    reactome_dims = pathlib.Path(
-        "../5.drug-dependency/results/all_reactome_results.parquet"
+    reactome_dims = (
+        REPO_ROOT / "5.drug-dependency" / "results" / "all_reactome_results.parquet"
     )
+    corum_dims = (
+        REPO_ROOT / "5.drug-dependency" / "results" / "all_corum_results.parquet"
+    )
+    drug_dims = REPO_ROOT / "5.drug-dependency" / "results" / "all_drug_results.parquet"
     reactome_df = pd.read_parquet(reactome_dims)
 
-    corum_dims = pathlib.Path("../5.drug-dependency/results/all_corum_results.parquet")
     corum_df = pd.read_parquet(corum_dims)
 
-    drug_dims = pathlib.Path("../5.drug-dependency/results/all_drug_results.parquet")
     drug_df = pd.read_parquet(drug_dims)
     # Step 2: Subset based on matching keys
     subset_keys = ["model", "latent_dim_total", "init", "z"]
@@ -98,13 +99,10 @@ def latent_load_data():
 def single_load_data():
 
     # Load dependency data
-    data_directory = pathlib.Path("./data").resolve()
-    dependency_file = pathlib.Path(
-        f"{data_directory}/CRISPRGeneEffect.parquet"
-    ).resolve()
-    gene_dict_file = pathlib.Path(
-        f"{data_directory}/CRISPR_gene_dictionary.parquet"
-    ).resolve()
+    data_directory = BASE_DIR / "data"
+    dependency_file = data_directory / "CRISPRGeneEffect.parquet"
+    gene_dict_file = data_directory / "CRISPR_gene_dictionary.parquet"
+    cancer_type_input_file = BASE_DIR / "data" / "Model.parquet"
     dependency_df, gene_dict_df = load_model_data(dependency_file, gene_dict_file)
     dependency_df = dependency_df.set_index("ModelID")
     cancer_type_input_file = pathlib.Path(f"{BASE_DIR}/data/Model.parquet")
@@ -118,9 +116,18 @@ def single_load_data():
 def spider_load_data():
     # model_ids = ["ACH-000323", "ACH-002083", "ACH-002228"]
     files = {
-        "Reactome Pathways": "../5.drug-dependency/results/all_reactome_results.parquet",
-        "CORUM Complexes": "../5.drug-dependency/results/all_corum_results.parquet",
-        "Drug Responses": "../5.drug-dependency/results/all_drug_results.parquet",
+        "Reactome Pathways": REPO_ROOT
+        / "5.drug-dependency"
+        / "results"
+        / "all_reactome_results.parquet",
+        "CORUM Complexes": REPO_ROOT
+        / "5.drug-dependency"
+        / "results"
+        / "all_corum_results.parquet",
+        "Drug Responses": REPO_ROOT
+        / "5.drug-dependency"
+        / "results"
+        / "all_drug_results.parquet",
     }
     # Adjust these if your column names differ
     feature_colnames = {
