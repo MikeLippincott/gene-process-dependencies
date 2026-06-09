@@ -120,7 +120,7 @@ def spider_load_data():
     # Adjust these if your column names differ
     feature_colnames = {
         "Reactome Pathways": "reactome_pathway",
-        "CORUM Complexes": "CORUM_pathway",
+        "CORUM Complexes": "reactome_pathway",
         "Drug Responses": "name",
     }
     score_col = "pathway_score"
@@ -139,7 +139,7 @@ def spider_load_data():
         if df[score_col].max() > global_max:
             global_max = df[score_col].max()
 
-    return dfs, global_max
+    return dfs, global_max, feature_colnames
 
 
 def clean_label(x: str) -> str:
@@ -238,11 +238,19 @@ def make_radar(
     score_col: str = "pathway_score",
     model_ids: list = ["ACH-000323", "ACH-002083", "ACH-002228"],
     num_circles: int = 5,
+    max_processes: int = None,
 ) -> None:
     """
     Draw a radar plot on an existing polar matplotlib axis.
     """
-    model_colors = generate_model_color_map(model_ids, seed=12)
+    if model_ids == ["ACH-000323", "ACH-002083", "ACH-002228"]:
+        model_colors = {
+            "ACH-000323": "#00FFFF",  # cyan
+            "ACH-002083": "#FF69B4",  # pink
+            "ACH-002228": "#800080",  # purple
+        }
+    else:
+        model_colors = generate_model_color_map(model_ids, seed=12)
 
     # Top 5 per model, union of all
     top_by_model = (
@@ -251,6 +259,8 @@ def make_radar(
         .reset_index(drop=True)
     )
     top_features = top_by_model[feature_col].drop_duplicates().tolist()
+    if max_processes is not None:
+        top_features = top_features[:max_processes]
     n_vars = len(top_features)
     labels = [clean_label(x) for x in top_features]
 

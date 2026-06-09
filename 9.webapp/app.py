@@ -128,36 +128,84 @@ st.markdown(
 
 # ── Sidebar controls ──────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🧬 Controls")
+    st.markdown("## 🧬 Selections")
     st.markdown("---")
     reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
-    # st.markdown("**DISEASE TYPES**")
-    # selected_diseases = st.multiselect(
-    #     "Primary diseases",
-    #     PRIMARY_DISEASES,
-    #     default=PRIMARY_DISEASES[:8],
-    #     label_visibility="collapsed",
-    # )
+
+    # ── Disease selector ──────────────────────────────────────────────
+    all_diseases = list(reactome_matrix["OncotreePrimaryDisease"].unique())
+
+    st.markdown(
+        "<span style=\"font-size:11px;color:#8b949e;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;\">Primary diseases</span>",
+        unsafe_allow_html=True,
+    )
+    col_d1, col_d2 = st.columns(2)
+    if col_d1.button("All", key="disease_all", use_container_width=True):
+        st.session_state["diseases"] = all_diseases
+    if col_d2.button("None", key="disease_none", use_container_width=True):
+        st.session_state["diseases"] = []
+
     selected_diseases = st.multiselect(
         "Primary diseases",
-        reactome_matrix["OncotreePrimaryDisease"].unique(),
-        default=reactome_matrix["OncotreePrimaryDisease"].unique(),
+        all_diseases,
+        default=st.session_state.get("diseases", all_diseases),
         label_visibility="collapsed",
+        key="diseases",
     )
+
+    st.markdown("---")
+
+    # ── Model ID selector ─────────────────────────────────────────────
+    DEFAULT_MODEL_IDS = ["ACH-000323", "ACH-002083", "ACH-002228"]
+    all_model_ids = list(reactome_matrix["ModelID"].unique())
+
+    st.markdown(
+        "<span style=\"font-size:11px;color:#8b949e;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;\">ModelIDs (spider plots)</span>",
+        unsafe_allow_html=True,
+    )
+    col_m1, col_m2, col_m3 = st.columns(3)
+    if col_m1.button("All", key="model_all", use_container_width=True):
+        st.session_state["model_ids"] = all_model_ids
+    if col_m2.button("None", key="model_none", use_container_width=True):
+        st.session_state["model_ids"] = []
+    if col_m3.button("Default", key="model_default", use_container_width=True):
+        st.session_state["model_ids"] = DEFAULT_MODEL_IDS
 
     model_ids = st.multiselect(
         "ModelIds (for spider plots)",
-        ["ACH-000323", "ACH-002083", "ACH-002228"],
-        default=["ACH-000323", "ACH-002083", "ACH-002228"],
+        all_model_ids,
+        default=st.session_state.get("model_ids", DEFAULT_MODEL_IDS),
         label_visibility="collapsed",
+        key="model_ids",
     )
+
+    st.markdown("---")
+
+    # ── Spider plot process limit ─────────────────────────────────────
+    st.markdown(
+        "<span style=\"font-size:11px;color:#8b949e;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;\">Spider plot — max processes</span>",
+        unsafe_allow_html=True,
+    )
+
+    limit_processes = st.toggle("Limit axes", value=False, key="limit_processes")
+
+    if limit_processes:
+        max_processes = st.slider(
+            "Max processes per plot",
+            min_value=3,
+            max_value=20,
+            value=20,
+            step=1,
+            label_visibility="collapsed",
+        )
+    else:
+        max_processes = None  # signals downstream: show all
 
     st.markdown("---")
     st.markdown(
         '<span style="font-size:10px;color:#484f58;">Data: DepMap synthetic (mirrors WayScience/gene-process-dependencies schema)</span>',
         unsafe_allow_html=True,
     )
-
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("# Gene Process Dependency Explorer")
@@ -168,40 +216,51 @@ st.markdown(
 
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-# tab_single = st.tabs(
-# tab_single, tab_latent= st.tabs(
-(tab_spider,) = st.tabs(["🕷 Spider Plots"])
-# tab_single, = st.tabs(["📍 single dependency plots"])
-# tab_latent, = st.tabs(["📍 latent plots"])
-# tab_single, tab_latent, tab_spider = st.tabs(
-# ["📍 single dependency plots", "📍 latent plots", "🕷 Spider Plots"]
-# ["📍 single dependency plots", "📍 latent plots", "🕷 Spider Plots"]
+tab_single, tab_latent, tab_spider, tab_scores, tab_table = st.tabs(
+    [
+        "📍 single dependency plots",
+        "📍 latent plots",
+        "🕷 Spider Plots",
+        "📊 Top Scores",
+        "📋 Data Table",
+    ]
+)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 1: PCA
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_latent:
+    st.markdown("### Latent Space PCA Projections")
+    st.markdown(
+        "PCA projection of latent representations learned by the selected compression model. "
+        "Each point is a cancer cell line; clusters indicate similar gene dependency profiles."
+    )
 
-# # ─────────────────────────────────────────────────────────────────────────────
-# # TAB 1: PCA
-# # ─────────────────────────────────────────────────────────────────────────────
-# with tab_latent:
-#     st.markdown("### Latent Space PCA Projections")
-#     st.markdown(
-#         "PCA projection of latent representations learned by the selected compression model. "
-#         "Each point is a cancer cell line; clusters indicate similar gene dependency profiles."
-#     )
+    reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
+    # add a way to show all diseases or select specific ones
 
-
-#     reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
-#     # add a way to show all diseases or select specific ones
-
-#     reactome_matrix = reactome_matrix[reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases)]
-#     corum_matrix = corum_matrix[corum_matrix["OncotreePrimaryDisease"].isin(selected_diseases)]
-#     drug_matrix = drug_matrix[drug_matrix["OncotreePrimaryDisease"].isin(selected_diseases)]
-#     # Assuming combined_df is your full dataset
-#     reactome_fig, reactome_out = make_dropdown_pca_with_selection(reactome_matrix, "PCA: Reactome Subset")
-#     corum_fig, corum_out = make_dropdown_pca_with_selection(corum_matrix, "PCA: CORUM Subset")
-#     drug_fig, drug_out = make_dropdown_pca_with_selection(drug_matrix, "PCA: Drug Subset")
-#     st.plotly_chart(reactome_fig, use_container_width=True)
-#     st.plotly_chart(corum_fig, use_container_width=True)
-#     st.plotly_chart(drug_fig, use_container_width=True)
+    reactome_matrix = reactome_matrix[
+        reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases)
+    ]
+    corum_matrix = corum_matrix[
+        corum_matrix["OncotreePrimaryDisease"].isin(selected_diseases)
+    ]
+    drug_matrix = drug_matrix[
+        drug_matrix["OncotreePrimaryDisease"].isin(selected_diseases)
+    ]
+    # Assuming combined_df is your full dataset
+    reactome_fig, reactome_out = make_dropdown_pca_with_selection(
+        reactome_matrix, "PCA: Reactome Subset"
+    )
+    corum_fig, corum_out = make_dropdown_pca_with_selection(
+        corum_matrix, "PCA: CORUM Subset"
+    )
+    drug_fig, drug_out = make_dropdown_pca_with_selection(
+        drug_matrix, "PCA: Drug Subset"
+    )
+    st.plotly_chart(reactome_fig, use_container_width=True)
+    st.plotly_chart(corum_fig, use_container_width=True)
+    st.plotly_chart(drug_fig, use_container_width=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -281,16 +340,27 @@ with tab_spider:
         "Each axis = one process; the profile shape captures cancer-type-specific vulnerabilities."
     )
 
-    # --- Create one combined figure ---
+    dfs, global_max, feature_colnames = spider_load_data()
+
     fig, axes = plt.subplots(3, 1, figsize=(18, 12), subplot_kw=dict(polar=True))
 
     for ax, (title, df) in zip(axes, dfs.items()):
         df = df[df["ModelID"].isin(model_ids)].copy()
-        make_radar(ax, df, feature_colnames[title], title, global_max)
 
-    # Shared legend (one for all)
+        # Apply process limit if set
+        cols = feature_colnames[title]
+
+        make_radar(
+            ax,
+            df,
+            cols,
+            title,
+            global_max,
+            model_ids=model_ids,
+            max_processes=max_processes,
+        )
+
     handles, labels = axes[0].get_legend_handles_labels()
-
     fig.legend(
         handles,
         labels,
@@ -303,3 +373,313 @@ with tab_spider:
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     st.pyplot(fig)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 4: Top Scores
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_scores:
+    st.markdown("### Top Dependency Scores")
+    st.markdown(
+        "Visualize the highest-scoring biological processes across cancer types and individual cell lines. "
+        "Use the controls below to tune how many processes, cancer types, and model IDs are shown."
+    )
+
+    reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
+    all_matrices = {
+        "Reactome": reactome_matrix,
+        "CORUM": corum_matrix,
+        "Drug": drug_matrix,
+    }
+
+    # ── Controls ──────────────────────────────────────────────────────
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    with sc1:
+        scores_dataset = st.selectbox(
+            "Dataset",
+            options=["Reactome", "CORUM", "Drug"],
+            key="scores_dataset",
+        )
+    with sc2:
+        top_n_scores = st.slider(
+            "Top N processes",
+            min_value=3,
+            max_value=50,
+            value=15,
+            step=1,
+            key="scores_top_n",
+        )
+    with sc3:
+        top_m_types = st.slider(
+            "Top M cancer types",
+            min_value=1,
+            max_value=30,
+            value=8,
+            step=1,
+            key="scores_top_m",
+        )
+    with sc4:
+        top_i_models = st.slider(
+            "Top I model IDs",
+            min_value=1,
+            max_value=30,
+            value=8,
+            step=1,
+            key="scores_top_i",
+        )
+
+    score_df = all_matrices[scores_dataset].copy()
+    score_df = score_df[score_df["OncotreePrimaryDisease"].isin(selected_diseases)]
+
+    meta_cols = ["ModelID", "OncotreePrimaryDisease"]
+    score_cols = [c for c in score_df.columns if c not in meta_cols]
+
+    # ── Plot 1: top N processes × top M cancer types ──────────────────
+    st.markdown("---")
+    st.markdown("#### By cancer type")
+    st.markdown(
+        "Mean dependency score per process, averaged across all cell lines in each cancer type. "
+        "Only the top N processes (by max mean score across shown cancer types) are displayed."
+    )
+
+    # Mean score per (disease, process)
+    disease_means = (
+        score_df.groupby("OncotreePrimaryDisease")[score_cols].mean().reset_index()
+    )
+
+    # Pick top M cancer types by their single highest mean score across all processes
+    disease_means["_max"] = disease_means[score_cols].max(axis=1)
+    top_diseases = disease_means.nlargest(top_m_types, "_max")[
+        "OncotreePrimaryDisease"
+    ].tolist()
+    disease_means = disease_means[
+        disease_means["OncotreePrimaryDisease"].isin(top_diseases)
+    ]
+    disease_means = disease_means.drop(columns=["_max"])
+
+    # Pick top N processes by max mean score across selected diseases
+    process_maxes = disease_means[score_cols].max(axis=0)
+    top_processes = process_maxes.nlargest(top_n_scores).index.tolist()
+
+    heatmap_disease = disease_means.set_index("OncotreePrimaryDisease")[top_processes]
+
+    fig_disease = go.Figure(
+        go.Heatmap(
+            z=heatmap_disease.values,
+            x=[
+                textwrap.shorten(p, width=30, placeholder="…")
+                for p in heatmap_disease.columns
+            ],
+            y=heatmap_disease.index.tolist(),
+            colorscale="Blues",
+            hovertemplate="Disease: %{y}<br>Process: %{x}<br>Score: %{z:.3f}<extra></extra>",
+            colorbar=dict(title="Mean score", thickness=14, len=0.6),
+        )
+    )
+    fig_disease.update_layout(
+        height=max(300, top_m_types * 36 + 120),
+        margin=dict(l=20, r=20, t=30, b=120),
+        paper_bgcolor="#0d1117",
+        plot_bgcolor="#0d1117",
+        font=dict(color="#e6edf3", size=11),
+        xaxis=dict(tickangle=-40, gridcolor="#21262d"),
+        yaxis=dict(gridcolor="#21262d"),
+    )
+    st.plotly_chart(fig_disease, use_container_width=True)
+
+    # ── Plot 2: top N processes × top I model IDs ─────────────────────
+    st.markdown("---")
+    st.markdown("#### By model ID")
+    st.markdown(
+        "Raw dependency score per process for individual cell lines. "
+        "Only the top I model IDs (by their single highest score across all processes) are shown."
+    )
+
+    # Pick top I models by max score across all processes
+    score_df["_max"] = score_df[score_cols].max(axis=1)
+    top_models = score_df.nlargest(top_i_models, "_max")["ModelID"].tolist()
+    score_df = score_df.drop(columns=["_max"])
+
+    model_df = score_df[score_df["ModelID"].isin(top_models)].set_index("ModelID")[
+        top_processes
+    ]
+
+    fig_model = go.Figure(
+        go.Heatmap(
+            z=model_df.values,
+            x=[
+                textwrap.shorten(p, width=30, placeholder="…") for p in model_df.columns
+            ],
+            y=model_df.index.tolist(),
+            colorscale="Purples",
+            hovertemplate="Model: %{y}<br>Process: %{x}<br>Score: %{z:.3f}<extra></extra>",
+            colorbar=dict(title="Score", thickness=14, len=0.6),
+        )
+    )
+    fig_model.update_layout(
+        height=max(300, top_i_models * 36 + 120),
+        margin=dict(l=20, r=20, t=30, b=120),
+        paper_bgcolor="#0d1117",
+        plot_bgcolor="#0d1117",
+        font=dict(color="#e6edf3", size=11),
+        xaxis=dict(tickangle=-40, gridcolor="#21262d"),
+        yaxis=dict(gridcolor="#21262d"),
+    )
+    st.plotly_chart(fig_model, use_container_width=True)
+
+    # ── Bar charts: top N processes collapsed ─────────────────────────
+    st.markdown("---")
+    st.markdown("#### Overall top processes")
+    st.markdown(
+        "Global mean score per process across all cell lines in the filtered dataset, ranked."
+    )
+
+    overall_means = score_df[score_cols].mean().nlargest(top_n_scores).reset_index()
+    overall_means.columns = ["Process", "Mean Score"]
+    overall_means["Process"] = overall_means["Process"].apply(
+        lambda p: textwrap.shorten(p, width=40, placeholder="…")
+    )
+
+    bar1, bar2 = st.columns(2)
+
+    with bar1:
+        fig_bar_d = px.bar(
+            overall_means,
+            x="Mean Score",
+            y="Process",
+            orientation="h",
+            title="Top processes — all cell lines",
+            color="Mean Score",
+            color_continuous_scale="Blues",
+        )
+        fig_bar_d.update_layout(
+            height=max(300, top_n_scores * 24 + 80),
+            margin=dict(l=10, r=10, t=40, b=20),
+            paper_bgcolor="#0d1117",
+            plot_bgcolor="#0d1117",
+            font=dict(color="#e6edf3", size=11),
+            yaxis=dict(autorange="reversed", gridcolor="#21262d"),
+            xaxis=dict(gridcolor="#21262d"),
+            coloraxis_showscale=False,
+            showlegend=False,
+        )
+        st.plotly_chart(fig_bar_d, use_container_width=True)
+
+    with bar2:
+        # Same but restricted to the top-M diseases
+        top_disease_means = (
+            score_df[score_df["OncotreePrimaryDisease"].isin(top_diseases)][score_cols]
+            .mean()
+            .nlargest(top_n_scores)
+            .reset_index()
+        )
+        top_disease_means.columns = ["Process", "Mean Score"]
+        top_disease_means["Process"] = top_disease_means["Process"].apply(
+            lambda p: textwrap.shorten(p, width=40, placeholder="…")
+        )
+        fig_bar_m = px.bar(
+            top_disease_means,
+            x="Mean Score",
+            y="Process",
+            orientation="h",
+            title=f"Top processes — top {top_m_types} cancer types",
+            color="Mean Score",
+            color_continuous_scale="Purples",
+        )
+        fig_bar_m.update_layout(
+            height=max(300, top_n_scores * 24 + 80),
+            margin=dict(l=10, r=10, t=40, b=20),
+            paper_bgcolor="#0d1117",
+            plot_bgcolor="#0d1117",
+            font=dict(color="#e6edf3", size=11),
+            yaxis=dict(autorange="reversed", gridcolor="#21262d"),
+            xaxis=dict(gridcolor="#21262d"),
+            coloraxis_showscale=False,
+            showlegend=False,
+        )
+        st.plotly_chart(fig_bar_m, use_container_width=True)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5: Data Table
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_table:
+    st.markdown("### Cancer Types & Primary Diseases")
+    st.markdown(
+        "Summary of all cancer types and their associated primary diseases present in the dataset."
+    )
+
+    reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
+    full_df = reactome_matrix[
+        reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases)
+    ]
+
+    # Build summary: one row per unique (OncotreeLineage, OncotreePrimaryDisease) pair
+    # adjust column names below to match whatever lineage/cancer-type column your data actually has
+    group_cols = ["OncotreePrimaryDisease", "ModelID"]  # ← rename if needed
+    summary = (
+        reactome_matrix.groupby(group_cols, dropna=False)
+        .agg(n_models=("ModelID", "nunique"))
+        .reset_index()
+        .sort_values(group_cols)
+        .rename(
+            columns={
+                "OncotreePrimaryDisease": "Primary Disease",
+                "n_models": "Cell Lines",
+            }
+        )
+        .drop(columns=["Cell Lines"])
+        .drop_duplicates()
+    )
+
+    # ── Summary metrics ───────────────────────────────────────────────
+    m1, m2 = st.columns(2)
+    m1.markdown(
+        f'<div class="metric-card"><div class="metric-label">Primary diseases</div><div class="metric-value">{summary["Primary Disease"].nunique()}</div></div>',
+        unsafe_allow_html=True,
+    )
+    m2.markdown(
+        f'<div class="metric-card"><div class="metric-label">Total cell lines</div><div class="metric-value">{int(summary["ModelID"].nunique())}</div></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("")
+
+    # ── Sort controls ─────────────────────────────────────────────────
+    sc1, sc2 = st.columns([3, 1])
+    with sc1:
+        sort_by = st.selectbox(
+            "Sort by",
+            options=summary.columns.tolist(),
+            index=0,
+            key="table_sort_col",
+        )
+    with sc2:
+        sort_asc = st.radio(
+            "Order",
+            ["Ascending", "Descending"],
+            index=0,
+            horizontal=True,
+            key="table_sort_dir",
+        )
+
+    summary = summary.sort_values(sort_by, ascending=(sort_asc == "Ascending"))
+
+    # ── Table ─────────────────────────────────────────────────────────
+    st.dataframe(
+        summary.reset_index(drop=True),
+        use_container_width=True,
+        height=560,
+        column_config={
+            "Lineage / Cancer Type": st.column_config.TextColumn(width="large"),
+            "Primary Disease": st.column_config.TextColumn(width="large"),
+            "Cell Lines": st.column_config.NumberColumn(width="small", format="%d"),
+        },
+        hide_index=True,
+    )
+
+    # ── Download ──────────────────────────────────────────────────────
+    st.download_button(
+        label="⬇ Download as CSV",
+        data=summary.to_csv(index=False).encode("utf-8"),
+        file_name="cancer_types_diseases.csv",
+        mime="text/csv",
+        key="table_download",
+    )
