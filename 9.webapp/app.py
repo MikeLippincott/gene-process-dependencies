@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from app_utils import (
     clean_label,
+    compute_single_pca,
     generate_random_palette,
     latent_load_data,
     load_data,
@@ -111,6 +112,15 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+# ── Load all data once at startup ─────────────────────────────────────────────
+_base_reactome, _base_corum, _base_drug = latent_load_data()
+ALL_DISEASES = sorted(_base_reactome["OncotreePrimaryDisease"].unique().tolist())
+ALL_MODEL_IDS = sorted(_base_reactome["ModelID"].unique().tolist())
+
+# Then in each tab, unpack from the cached call — no reload happens:
+# tab_latent, tab_scores, tab_table all call latent_load_data() again
+# but with @st.cache_data it returns the cached result instantly
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("# Gene Process Dependency Explorer")
@@ -221,17 +231,7 @@ with tab_single:
     if len(selected_diseases_single) == 0:
         st.warning("Please select at least one primary disease to display the plot.")
     else:
-        combined_df = single_load_data()
-        combined_df = combined_df[
-            combined_df["OncotreePrimaryDisease"].isin(selected_diseases_single)
-        ]
-
-        gene_cols = combined_df.columns.drop(["ModelID", "OncotreePrimaryDisease"])
-        pca_input = combined_df[gene_cols].apply(pd.to_numeric, errors="coerce")
-        pca = PCA(n_components=2, random_state=0)
-        pca_embedding = pca.fit_transform(pca_input)
-        combined_df["PCA1"] = pca_embedding[:, 0]
-        combined_df["PCA2"] = pca_embedding[:, 1]
+        combined_df = compute_single_pca(tuple(sorted(selected_diseases_single)))
 
         cancer_types = combined_df["OncotreePrimaryDisease"].unique()
         color_map = (
@@ -287,7 +287,7 @@ with tab_latent:
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
         selected_diseases_latent = disease_controls("latent")
         st.markdown("</div>", unsafe_allow_html=True)
-    if len(selected_diseases_single) == 0:
+    if len(selected_diseases_latent) == 0:
         st.warning("Please select at least one primary disease to display the plot.")
     else:
         reactome_matrix, corum_matrix, drug_matrix = latent_load_data()

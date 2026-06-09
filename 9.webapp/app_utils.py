@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
+import streamlit as st
 from ipywidgets import widgets
 from sklearn.decomposition import PCA
 
@@ -21,6 +22,7 @@ print(f"Repo root: {REPO_ROOT}")
 
 
 # ── Load & filter data ────────────────────────────────────────────────────────
+@st.cache_data
 def load_data():
     # Load dependency data
     data_directory = BASE_DIR / "data"
@@ -33,6 +35,7 @@ def load_data():
     cancer_type_df = pd.read_parquet(cancer_type_input_file)
 
 
+@st.cache_data
 def latent_load_data():
     # latent space data
     cancer_type_input_file = BASE_DIR / "data" / "Model.parquet"
@@ -96,6 +99,7 @@ def latent_load_data():
     return reactome_matrix, corum_matrix, drug_matrix
 
 
+@st.cache_data
 def single_load_data():
 
     # Load dependency data
@@ -113,6 +117,7 @@ def single_load_data():
     return combined_df
 
 
+@st.cache_data
 def spider_load_data():
     # model_ids = ["ACH-000323", "ACH-002083", "ACH-002228"]
     files = {
@@ -408,6 +413,23 @@ def make_dropdown_pca_with_selection(df, title="PCA Interactive Plot"):
     )
 
     return fig, out  # Return both the figure and the output widget for selection
+
+
+@st.cache_data
+def compute_single_pca(selected_diseases: tuple) -> pd.DataFrame:
+    """Cache PCA result per disease selection."""
+    combined_df = single_load_data()
+    combined_df = combined_df[
+        combined_df["OncotreePrimaryDisease"].isin(selected_diseases)
+    ]
+    gene_cols = combined_df.columns.drop(["ModelID", "OncotreePrimaryDisease"])
+    pca_input = combined_df[gene_cols].apply(pd.to_numeric, errors="coerce")
+    pca = PCA(n_components=2, random_state=0)
+    pca_embedding = pca.fit_transform(pca_input)
+    combined_df = combined_df.copy()
+    combined_df["PCA1"] = pca_embedding[:, 0]
+    combined_df["PCA2"] = pca_embedding[:, 1]
+    return combined_df
 
 
 def load_model_data(dependency_file, gene_dict_file):
