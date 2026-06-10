@@ -426,7 +426,7 @@ def compute_single_pca(selected_diseases: tuple) -> pd.DataFrame:
     pca_input = combined_df[gene_cols].apply(pd.to_numeric, errors="coerce")
     pca = PCA(n_components=2, random_state=0)
     pca_embedding = pca.fit_transform(pca_input)
-    combined_df = combined_df.copy()
+    combined_df = combined_df[["ModelID", "OncotreePrimaryDisease"]].copy()
     combined_df["PCA1"] = pca_embedding[:, 0]
     combined_df["PCA2"] = pca_embedding[:, 1]
     return combined_df

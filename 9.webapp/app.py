@@ -113,14 +113,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Load all data once at startup ─────────────────────────────────────────────
-_base_reactome, _base_corum, _base_drug = latent_load_data()
-ALL_DISEASES = sorted(_base_reactome["OncotreePrimaryDisease"].unique().tolist())
-ALL_MODEL_IDS = sorted(_base_reactome["ModelID"].unique().tolist())
-
-# Then in each tab, unpack from the cached call — no reload happens:
-# tab_latent, tab_scores, tab_table all call latent_load_data() again
-# but with @st.cache_data it returns the cached result instantly
+# ── Load only the tiny model metadata file at startup (188 KB) ────────────────
+_model_meta = pd.read_parquet(pathlib.Path(__file__).parent / "data" / "Model.parquet", columns=["ModelID", "OncotreePrimaryDisease"])
+ALL_DISEASES = sorted(_model_meta["OncotreePrimaryDisease"].dropna().unique().tolist())
+ALL_MODEL_IDS = sorted(_model_meta["ModelID"].dropna().unique().tolist())
+DEFAULT_MODEL_IDS = ["ACH-000323", "ACH-002083", "ACH-002228"]
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("# Gene Process Dependency Explorer")
@@ -128,12 +125,6 @@ st.markdown(
     '<span class="section-tag">DepMap · BioBombe · WayScience</span>',
     unsafe_allow_html=True,
 )
-
-# ── Load base data once (cheap — just for disease list) ───────────────────────
-_base_reactome, _base_corum, _base_drug = latent_load_data()
-ALL_DISEASES = sorted(_base_reactome["OncotreePrimaryDisease"].unique().tolist())
-ALL_MODEL_IDS = sorted(_base_reactome["ModelID"].unique().tolist())
-DEFAULT_MODEL_IDS = ["ACH-000323", "ACH-002083", "ACH-002228"]
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 (
@@ -228,10 +219,14 @@ with tab_single:
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
         selected_diseases_single = disease_controls("single")
         st.markdown("</div>", unsafe_allow_html=True)
+
     if len(selected_diseases_single) == 0:
         st.warning("Please select at least one primary disease to display the plot.")
-    else:
-        combined_df = compute_single_pca(tuple(sorted(selected_diseases_single)))
+    elif st.button("Compute PCA", key="single_compute"):
+        st.session_state["single_run"] = tuple(sorted(selected_diseases_single))
+
+    if st.session_state.get("single_run"):
+        combined_df = compute_single_pca(st.session_state["single_run"])
 
         cancer_types = combined_df["OncotreePrimaryDisease"].unique()
         color_map = (
