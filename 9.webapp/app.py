@@ -2,33 +2,21 @@
 Gene Process Dependency Explorer
 """
 
-import os
 import pathlib
 import textwrap
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from app_utils import (
-    clean_label,
-    generate_random_palette,
     latent_load_data,
     make_radar,
-    place_labels_polar,
     spider_load_data,
-    truncate_label,
 )
-from plotly.subplots import make_subplots
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
-BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
-REPO_DIR = BASE_DIR.parent
-print(f"Base directory: {BASE_DIR}")
-print(f"Repository directory: {REPO_DIR}")
+BASE_DIR = pathlib.Path(__file__).parent
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
