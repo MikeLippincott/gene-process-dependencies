@@ -89,7 +89,8 @@ Download them via [`0.data-download/`](../0.data-download/) if you need to re-ru
 
 ## Deployment
 
-The Space at [WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer) deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main`. See [`../.github/workflows/deploy-space.yml`](../.github/workflows/deploy-space.yml).
+The Space at [WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer) deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main`.
+See [`../.github/workflows/deploy-space.yml`](../.github/workflows/deploy-space.yml).
 
 To deploy manually:
 
@@ -112,4 +113,4 @@ Requires the `hf` CLI and login to the WayScience org (`hf auth login`).
 
 ## Repository structure
 
-This webapp lives in `9.webapp/` within the larger [gene_dependency_representations](https://github.com/WayScience/gene_dependency_representations) repository, which contains the full analysis pipeline from data download through VAE training to result generation.
+This webapp lives in `9.webapp/` within the larger [gene_dependency_representations](https://github.com/WayScience/gene_dependency_representations) repository, which contains the full BioBombe analysis and interpretation pipeline.

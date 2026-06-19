@@ -57,11 +57,12 @@ conda activate gene_dependency_representations
 ## Webapp
 
 An interactive Streamlit dashboard for exploring gene dependency outputs lives in [`9.webapp/`](9.webapp/).
-It is self-contained with its own [`uv`](https://docs.astral.sh/uv/)-managed environment — no conda setup required.
+It is self-contained with its own [`uv`](https://docs.astral.sh/uv/)-managed environment.
 
 A live version is hosted on Hugging Face Spaces: **[WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer)**
 
-The Space deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main` (see [`.github/workflows/deploy-space.yml`](.github/workflows/deploy-space.yml)). A `HF_TOKEN` secret with write access to the WayScience org must be set in the repo's GitHub Actions secrets.
+The Space deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main` (see [`.github/workflows/deploy-space.yml`](.github/workflows/deploy-space.yml)).
+A `HF_TOKEN` secret with write access to the WayScience org must be set in the repo's GitHub Actions secrets.
 
 To deploy manually (e.g. for testing before a PR merges):
 
@@ -104,7 +105,5 @@ PORT=8501 uv run streamlit run app.py \
 ```
 
 ### Data
-
-All data files the webapp needs are committed in `9.webapp/data/` — no external downloads required. Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are gitignored and only needed to re-run the full analysis pipeline via [`0.data-download/`](0.data-download/).
 
 See [`9.webapp/README.md`](9.webapp/README.md) for full details.
