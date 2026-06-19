@@ -82,7 +82,31 @@ All data files are committed to the repository — no external downloads needed 
 | `data/all_corum_results.parquet` | 1.7 MB | Full CORUM latent scores |
 | `data/all_drug_results.parquet` | 4.1 MB | Full drug latent scores |
 
-Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are **not** required by the webapp and are gitignored. Download them via [`0.data-download/`](../0.data-download/) if you need to re-run the full analysis pipeline.
+Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are **not** required by the webapp and are gitignored.
+Download them via [`0.data-download/`](../0.data-download/) if you need to re-run the full analysis pipeline.
+
+---
+
+## Deployment
+
+The Space at [WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer) deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main`. See [`../.github/workflows/deploy-space.yml`](../.github/workflows/deploy-space.yml).
+
+To deploy manually:
+
+```sh
+cd 9.webapp
+hf upload WayScience/gene-dependency-explorer . . \
+  --repo-type space \
+  --exclude ".venv/**" \
+  --exclude "**/__pycache__/**" \
+  --exclude "**/*.pyc" \
+  --exclude "**/*.egg-info/**" \
+  --exclude "data/CRISPRGeneEffect.parquet" \
+  --exclude "data/CRISPR_gene_dictionary.parquet" \
+  --commit-message "your message here"
+```
+
+Requires the `hf` CLI and login to the WayScience org (`hf auth login`).
 
 ---
 

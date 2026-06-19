@@ -61,7 +61,9 @@ It is self-contained with its own [`uv`](https://docs.astral.sh/uv/)-managed env
 
 A live version is hosted on Hugging Face Spaces: **[WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer)**
 
-To update the Space after changes to `9.webapp/`, run:
+The Space deploys automatically via GitHub Actions whenever changes to `9.webapp/` are merged into `main` (see [`.github/workflows/deploy-space.yml`](.github/workflows/deploy-space.yml)). A `HF_TOKEN` secret with write access to the WayScience org must be set in the repo's GitHub Actions secrets.
+
+To deploy manually (e.g. for testing before a PR merges):
 
 ```sh
 cd 9.webapp
