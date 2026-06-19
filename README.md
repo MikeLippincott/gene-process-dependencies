@@ -54,14 +54,46 @@ conda activate gene_dependency_representations
 
 ## Webapp
 
-This repository now includes a Streamlit dashboard for interactive exploration of the parquet-backed plot outputs in `9.webapp/`.
+An interactive Streamlit dashboard for exploring gene dependency outputs lives in [`9.webapp/`](9.webapp/).
+It is self-contained with its own `uv`-managed environment — no conda setup required.
 
-Run it from the repository root after activating the environment:
+### Prerequisites
+
+Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it:
 
 ```sh
-just run
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Use `just build` to syntax-check the app and `just deploy` to run Streamlit in headless mode on port `8501` by default.
+### Run locally
 
-The dashboard currently exposes the Reactome, CORUM, and Drug result tables with toggleable Projection, Radar, and Heatmap views.
+```sh
+cd 9.webapp
+uv run streamlit run app.py
+```
+
+`uv` will create a virtual environment and install all dependencies automatically on first run.
+
+### Deploy (headless)
+
+```sh
+cd 9.webapp
+just deploy
+```
+
+This runs Streamlit on `0.0.0.0:8501` by default. Override the port with `PORT=8080 just deploy`.
+
+### Data
+
+The webapp reads pre-computed result files that are committed to the repository:
+
+| File | Description |
+| :--- | :---------- |
+| `9.webapp/data/Model.parquet` | DepMap cell line metadata |
+| `9.webapp/data/pca_embeddings_single_dependencies.parquet` | PCA of raw gene dependency scores |
+| `9.webapp/data/pca_embeddings_latent_reactome.parquet` | PCA of Reactome latent scores |
+| `9.webapp/data/pca_embeddings_latent_corum.parquet` | PCA of CORUM latent scores |
+| `9.webapp/data/pca_embeddings_latent_drug.parquet` | PCA of drug latent scores |
+| `5.drug-dependency/results/all_*_results.parquet` | Full latent score tables (scores + spider plots) |
+
+Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are **not** required by the webapp and are gitignored. Download them separately via [`0.data-download/`](0.data-download/) if you need to re-run the analysis pipeline.

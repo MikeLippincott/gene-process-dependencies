@@ -1,15 +1,13 @@
 import colorsys
-import os
 import pathlib
 import random
 import textwrap
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
 
-BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = pathlib.Path(__file__).parent
 REPO_ROOT = BASE_DIR.parent
 
 
@@ -142,9 +140,9 @@ def generate_random_palette(num_colors, seed=12):
     colors = []
     for _ in range(num_colors):
         h = random.random()
-        l = random.uniform(0.2, 0.8)
+        lightness = random.uniform(0.2, 0.8)
         s = random.uniform(0.5, 1.0)
-        colors.append(colorsys.hls_to_rgb(h, l, s))
+        colors.append(colorsys.hls_to_rgb(h, lightness, s))
     return colors
 
 
