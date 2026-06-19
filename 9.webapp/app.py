@@ -30,8 +30,10 @@ from plotly.subplots import make_subplots
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__))).parent
-
+BASE_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
+REPO_DIR = BASE_DIR.parent
+print(f"Base directory: {BASE_DIR}")
+print(f"Repository directory: {REPO_DIR}")
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -113,12 +115,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Load only the tiny model metadata file at startup (188 KB) ────────────────
-_model_meta = pd.read_parquet(pathlib.Path(__file__).parent / "data" / "Model.parquet", columns=["ModelID", "OncotreePrimaryDisease"])
-ALL_DISEASES = sorted(_model_meta["OncotreePrimaryDisease"].dropna().unique().tolist())
-ALL_MODEL_IDS = sorted(_model_meta["ModelID"].dropna().unique().tolist())
-DEFAULT_MODEL_IDS = ["ACH-000323", "ACH-002083", "ACH-002228"]
-
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("# Gene Process Dependency Explorer")
 st.markdown(
@@ -126,6 +122,26 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ── Load only the tiny model metadata file at startup (188 KB) ────────────────
+_model_meta = pd.read_parquet(
+    BASE_DIR / "data" / "Model.parquet",
+    columns=["ModelID", "OncotreePrimaryDisease"],
+)
+ALL_DISEASES = sorted(_model_meta["OncotreePrimaryDisease"].dropna().unique().tolist())
+ALL_MODEL_IDS = sorted(_model_meta["ModelID"].dropna().unique().tolist())
+DEFAULT_MODEL_IDS = ["ACH-000323", "ACH-002083", "ACH-002228"]
+single_gene_pca_df = pd.read_parquet(
+    BASE_DIR / "data" / "pca_embeddings_single_dependencies.parquet"
+)
+latent_reactome_pca_df = pd.read_parquet(
+    BASE_DIR / "data" / "pca_embeddings_latent_reactome.parquet"
+)
+latent_corum_pca_df = pd.read_parquet(
+    BASE_DIR / "data" / "pca_embeddings_latent_corum.parquet"
+)
+latent_drug_pca_df = pd.read_parquet(
+    BASE_DIR / "data" / "pca_embeddings_latent_drug.parquet"
+)
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 (
     tab_welcome,
@@ -220,53 +236,55 @@ with tab_single:
         selected_diseases_single = disease_controls("single")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    if len(selected_diseases_single) == 0:
-        st.warning("Please select at least one primary disease to display the plot.")
-    elif st.button("Compute PCA", key="single_compute"):
-        st.session_state["single_run"] = tuple(sorted(selected_diseases_single))
+    cancer_types = single_gene_pca_df["OncotreePrimaryDisease"].unique()
+    color_map = (
+        px.colors.qualitative.Plotly
+        + px.colors.qualitative.Light24
+        + px.colors.qualitative.Dark24
+    )
+    highlight_color_map = {
+        c: color_map[i % len(color_map)] for i, c in enumerate(cancer_types)
+    }
 
-    if st.session_state.get("single_run"):
-        combined_df = compute_single_pca(st.session_state["single_run"])
-
-        cancer_types = combined_df["OncotreePrimaryDisease"].unique()
-        color_map = (
-            px.colors.qualitative.Plotly
-            + px.colors.qualitative.Light24
-            + px.colors.qualitative.Dark24
-        )
-        highlight_color_map = {
-            c: color_map[i % len(color_map)] for i, c in enumerate(cancer_types)
-        }
-
-        traces = []
-        for cancer in cancer_types:
-            df_sub = combined_df[combined_df["OncotreePrimaryDisease"] == cancer]
-            traces.append(
-                go.Scatter(
-                    x=df_sub["PCA1"],
-                    y=df_sub["PCA2"],
-                    mode="markers",
-                    name=cancer,
-                    marker=dict(size=7, color=highlight_color_map[cancer]),
-                    text=[f"{cancer} | {m}" for m in df_sub["ModelID"]],
-                    hoverinfo="text",
-                )
+    traces = []
+    for cancer in cancer_types:
+        df_sub = single_gene_pca_df[
+            single_gene_pca_df["OncotreePrimaryDisease"] == cancer
+        ]
+        is_selected = cancer in selected_diseases_single
+        traces.append(
+            go.Scatter(
+                x=df_sub["PCA1"],
+                y=df_sub["PCA2"],
+                mode="markers",
+                name=cancer,
+                marker=dict(
+                    size=7,
+                    color=highlight_color_map[cancer] if is_selected else "#3d444d",
+                    opacity=1.0 if is_selected else 0.3,
+                ),
+                text=[f"{cancer} | {m}" for m in df_sub["ModelID"]],
+                hoverinfo="text" if is_selected else "skip",
+                showlegend=is_selected,
             )
-
-        fig_single = go.Figure(data=traces)
-        fig_single.update_layout(
-            paper_bgcolor="#0d1117",
-            plot_bgcolor="#0d1117",
-            font=dict(color="#e6edf3"),
-            xaxis=dict(gridcolor="#21262d"),
-            yaxis=dict(gridcolor="#21262d"),
-            legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
-            height=1200,
-            margin=dict(l=40, r=40, t=40, b=40),
-            width=800,
         )
-        st.plotly_chart(fig_single, use_container_width=True)
 
+    # Render grayed traces behind colored ones
+    traces.sort(key=lambda t: t.name in selected_diseases_single, reverse=True)
+
+    fig_single = go.Figure(data=traces)
+    fig_single.update_layout(
+        paper_bgcolor="#0d1117",
+        plot_bgcolor="#0d1117",
+        font=dict(color="#e6edf3"),
+        xaxis=dict(gridcolor="#21262d"),
+        yaxis=dict(gridcolor="#21262d"),
+        legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+        height=1200,
+        margin=dict(l=40, r=40, t=40, b=40),
+        width=800,
+    )
+    st.plotly_chart(fig_single, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TAB 2 — Latent plots
@@ -282,31 +300,59 @@ with tab_latent:
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
         selected_diseases_latent = disease_controls("latent")
         st.markdown("</div>", unsafe_allow_html=True)
-    if len(selected_diseases_latent) == 0:
-        st.warning("Please select at least one primary disease to display the plot.")
-    else:
-        reactome_matrix, corum_matrix, drug_matrix = latent_load_data()
-        reactome_matrix = reactome_matrix[
-            reactome_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-        ]
-        corum_matrix = corum_matrix[
-            corum_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-        ]
-        drug_matrix = drug_matrix[
-            drug_matrix["OncotreePrimaryDisease"].isin(selected_diseases_latent)
-        ]
 
-        reactome_fig, _ = make_dropdown_pca_with_selection(
-            reactome_matrix, "PCA: Reactome Subset"
-        )
-        corum_fig, _ = make_dropdown_pca_with_selection(
-            corum_matrix, "PCA: CORUM Subset"
-        )
-        drug_fig, _ = make_dropdown_pca_with_selection(drug_matrix, "PCA: Drug Subset")
+    for title, pca_df in [
+        ("Reactome", latent_reactome_pca_df),
+        ("CORUM", latent_corum_pca_df),
+        ("Drug", latent_drug_pca_df),
+    ]:
+        st.markdown(f"#### PCA: {title} Subset")
 
-        st.plotly_chart(reactome_fig, use_container_width=True)
-        st.plotly_chart(corum_fig, use_container_width=True)
-        st.plotly_chart(drug_fig, use_container_width=True)
+        cancer_types = pca_df["OncotreePrimaryDisease"].unique()
+        color_map = (
+            px.colors.qualitative.Plotly
+            + px.colors.qualitative.Light24
+            + px.colors.qualitative.Dark24
+        )
+        highlight_color_map = {
+            c: color_map[i % len(color_map)] for i, c in enumerate(cancer_types)
+        }
+
+        traces = []
+        for cancer in cancer_types:
+            df_sub = pca_df[pca_df["OncotreePrimaryDisease"] == cancer]
+            is_selected = cancer in selected_diseases_latent
+            traces.append(
+                go.Scatter(
+                    x=df_sub["PCA1"],
+                    y=df_sub["PCA2"],
+                    mode="markers",
+                    name=cancer,
+                    marker=dict(
+                        size=7,
+                        color=highlight_color_map[cancer] if is_selected else "#3d444d",
+                        opacity=1.0 if is_selected else 0.3,
+                    ),
+                    text=[f"{cancer} | {m}" for m in df_sub["ModelID"]],
+                    hoverinfo="text" if is_selected else "skip",
+                    showlegend=is_selected,
+                )
+            )
+
+        traces.sort(key=lambda t: t.name in selected_diseases_latent, reverse=True)
+
+        fig = go.Figure(data=traces)
+        fig.update_layout(
+            paper_bgcolor="#0d1117",
+            plot_bgcolor="#0d1117",
+            font=dict(color="#e6edf3"),
+            xaxis=dict(gridcolor="#21262d"),
+            yaxis=dict(gridcolor="#21262d"),
+            legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+            height=600,
+            margin=dict(l=40, r=40, t=40, b=40),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -321,10 +367,58 @@ with tab_spider:
 
     with st.container():
         st.markdown('<div class="control-panel">', unsafe_allow_html=True)
-        sp_c1, sp_c2 = st.columns(2)
+        sp_c1, sp_c2, sp_c3 = st.columns(3)
+
         with sp_c1:
-            model_ids_spider = model_id_controls("spider")
+            spider_filter_mode = st.radio(
+                "Filter by",
+                ["Model IDs", "Cancer Types"],
+                horizontal=True,
+                key="spider_filter_mode",
+            )
+
         with sp_c2:
+            if spider_filter_mode == "Model IDs":
+                st.markdown(
+                    '<div class="control-label">Model IDs (max 10)</div>',
+                    unsafe_allow_html=True,
+                )
+                spider_model_ids = st.multiselect(
+                    "Model IDs",
+                    ALL_MODEL_IDS,
+                    default=st.session_state.get("spider_model_ids", DEFAULT_MODEL_IDS),
+                    max_selections=10,
+                    label_visibility="collapsed",
+                    key="spider_model_ids",
+                )
+            else:
+                st.markdown(
+                    '<div class="control-label">Cancer Types (max 5)</div>',
+                    unsafe_allow_html=True,
+                )
+                spider_cancer_types = st.multiselect(
+                    "Cancer Types",
+                    ALL_DISEASES,
+                    default=st.session_state.get(
+                        "spider_cancer_types", ALL_DISEASES[:2]
+                    ),
+                    max_selections=5,
+                    label_visibility="collapsed",
+                    key="spider_cancer_types",
+                )
+                st.markdown(
+                    '<div class="control-label">Aggregation</div>',
+                    unsafe_allow_html=True,
+                )
+                spider_agg = st.radio(
+                    "Aggregation",
+                    ["Mean", "Min", "Max"],
+                    horizontal=True,
+                    key="spider_agg",
+                    label_visibility="collapsed",
+                )
+
+        with sp_c3:
             st.markdown(
                 '<div class="control-label">Process limit</div>', unsafe_allow_html=True
             )
@@ -346,34 +440,86 @@ with tab_spider:
         st.markdown("</div>", unsafe_allow_html=True)
 
     dfs, global_max, feature_colnames = spider_load_data()
-    fig_spider, axes = plt.subplots(3, 1, figsize=(18, 12), subplot_kw=dict(polar=True))
 
-    for ax, (title, df) in zip(axes, dfs.items()):
-        df = df[df["ModelID"].isin(model_ids_spider)].copy()
-        cols = feature_colnames[title]
-        make_radar(
-            ax,
-            df,
-            cols,
-            title,
-            global_max,
-            model_ids=model_ids_spider,
-            max_processes=max_processes,
+    if spider_filter_mode == "Model IDs":
+        selected_ids = spider_model_ids
+        id_col = "ModelID"
+    else:
+        selected_ids = (
+            spider_cancer_types
+            if "spider_cancer_types" in st.session_state or True
+            else []
+        )
+        id_col = "OncotreePrimaryDisease"
+        agg_func = {"Mean": "mean", "Min": "min", "Max": "max"}[spider_agg]
+
+    if len(selected_ids) == 0:
+        st.warning(
+            "Please select at least one model ID or cancer type to display the plots."
+        )
+    else:
+        fig_spider, axes = plt.subplots(
+            3, 1, figsize=(18, 12), subplot_kw=dict(polar=True)
         )
 
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig_spider.legend(
-        handles,
-        labels,
-        loc="lower center",
-        ncol=3,
-        fontsize=12,
-        frameon=False,
-        bbox_to_anchor=(0.5, -0.05),
-    )
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    st.pyplot(fig_spider)
+        for ax, (title, df) in zip(axes, dfs.items()):
+            cols = feature_colnames[title]
+            if spider_filter_mode == "Cancer Types":
+                df_filtered = df[df["OncotreePrimaryDisease"].isin(selected_ids)].copy()
 
+                # cols from feature_colnames[title] is the correct feature column list
+                feature_cols = list(cols) if not isinstance(cols, list) else cols
+                st.write("feature_colnames:", feature_colnames)
+
+                df_agg = (
+                    df_filtered.groupby("OncotreePrimaryDisease")[feature_cols]
+                    .agg(agg_func)
+                    .reset_index()
+                    .rename(columns={"OncotreePrimaryDisease": "ModelID"})
+                )
+
+                # Melt to long format — use a fixed string for var_name
+                df_long = df_agg.melt(
+                    id_vars="ModelID",
+                    value_vars=feature_cols,
+                    var_name="feature",  # fixed string, not cols
+                    value_name="agg_score",
+                )
+
+                make_radar(
+                    ax,
+                    df_long,
+                    "feature",  # must match var_name above
+                    f"{title} ({spider_agg})",
+                    global_max,
+                    score_col="agg_score",
+                    model_ids=selected_ids,
+                    max_processes=max_processes,
+                )
+            else:
+                df_filtered = df[df["ModelID"].isin(selected_ids)].copy()
+                make_radar(
+                    ax,
+                    df_filtered,
+                    cols,
+                    title,
+                    global_max,
+                    model_ids=selected_ids,
+                    max_processes=max_processes,
+                )
+
+        handles, labels = axes[0].get_legend_handles_labels()
+        fig_spider.legend(
+            handles,
+            labels,
+            loc="lower center",
+            ncol=3,
+            fontsize=12,
+            frameon=False,
+            bbox_to_anchor=(0.5, -0.05),
+        )
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        st.pyplot(fig_spider)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TAB 4 — Top scores
