@@ -59,6 +59,23 @@ It is self-contained with its own [`uv`](https://docs.astral.sh/uv/)-managed env
 
 A live version is hosted on Hugging Face Spaces: **[WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer)**
 
+To update the Space after changes to `9.webapp/`, run:
+
+```sh
+cd 9.webapp
+hf upload WayScience/gene-dependency-explorer . . \
+  --repo-type space \
+  --exclude ".venv/**" \
+  --exclude "**/__pycache__/**" \
+  --exclude "**/*.pyc" \
+  --exclude "**/*.egg-info/**" \
+  --exclude "data/CRISPRGeneEffect.parquet" \
+  --exclude "data/CRISPR_gene_dictionary.parquet" \
+  --commit-message "your message here"
+```
+
+You will need the `hf` CLI installed and be logged in to the WayScience HF organization (`hf auth login`).
+
 ### Run locally
 
 ```sh
