@@ -14,15 +14,10 @@ import plotly.graph_objects as go
 import streamlit as st
 from app_utils import (
     clean_label,
-    compute_single_pca,
     generate_random_palette,
     latent_load_data,
-    load_data,
-    load_model_data,
-    make_dropdown_pca_with_selection,
     make_radar,
     place_labels_polar,
-    single_load_data,
     spider_load_data,
     truncate_label,
 )
