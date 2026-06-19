@@ -1,5 +1,7 @@
 # Gene Dependency Representations
 
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/WayScience/gene-dependency-explorer)
+
 ## Goal
 
 Current cancer treatments tend to be toxic and leave patients with lifelong side-effects.
