@@ -1,0 +1,33 @@
+name: Deploy to HF Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "9.webapp/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Push to HF Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd 9.webapp
+          hf upload WayScience/gene-dependency-explorer . . \
+            --repo-type space \
+            --exclude ".venv/**" \
+            --exclude "**/__pycache__/**" \
+            --exclude "**/*.pyc" \
+            --exclude "**/*.egg-info/**" \
+            --exclude "data/CRISPRGeneEffect.parquet" \
+            --exclude "data/CRISPR_gene_dictionary.parquet" \
+            --commit-message "deploy from ${{ github.sha }}"
