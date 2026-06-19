@@ -8,18 +8,14 @@ import pandas as pd
 import streamlit as st
 
 BASE_DIR = pathlib.Path(__file__).parent
-REPO_ROOT = BASE_DIR.parent
+DATA_DIR = BASE_DIR / "data"
 
 
 @st.cache_data
 def latent_load_data():
-    reactome_dims = (
-        REPO_ROOT / "5.drug-dependency" / "results" / "all_reactome_results.parquet"
-    )
-    corum_dims = (
-        REPO_ROOT / "5.drug-dependency" / "results" / "all_corum_results.parquet"
-    )
-    drug_dims = REPO_ROOT / "5.drug-dependency" / "results" / "all_drug_results.parquet"
+    reactome_dims = DATA_DIR / "all_reactome_results.parquet"
+    corum_dims = DATA_DIR / "all_corum_results.parquet"
+    drug_dims = DATA_DIR / "all_drug_results.parquet"
 
     reactome_df = pd.read_parquet(reactome_dims)
     corum_df = pd.read_parquet(corum_dims)
@@ -65,18 +61,9 @@ def latent_load_data():
 @st.cache_data
 def spider_load_data():
     files = {
-        "Reactome Pathways": REPO_ROOT
-        / "5.drug-dependency"
-        / "results"
-        / "all_reactome_results.parquet",
-        "CORUM Complexes": REPO_ROOT
-        / "5.drug-dependency"
-        / "results"
-        / "all_corum_results.parquet",
-        "Drug Responses": REPO_ROOT
-        / "5.drug-dependency"
-        / "results"
-        / "all_drug_results.parquet",
+        "Reactome Pathways": DATA_DIR / "all_reactome_results.parquet",
+        "CORUM Complexes": DATA_DIR / "all_corum_results.parquet",
+        "Drug Responses": DATA_DIR / "all_drug_results.parquet",
     }
     feature_colnames = {
         "Reactome Pathways": "reactome_pathway",

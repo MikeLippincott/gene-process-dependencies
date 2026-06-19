@@ -55,45 +55,35 @@ conda activate gene_dependency_representations
 ## Webapp
 
 An interactive Streamlit dashboard for exploring gene dependency outputs lives in [`9.webapp/`](9.webapp/).
-It is self-contained with its own `uv`-managed environment — no conda setup required.
+It is self-contained with its own [`uv`](https://docs.astral.sh/uv/)-managed environment — no conda setup required.
 
-### Prerequisites
-
-Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it:
-
-```sh
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+A live version is hosted on Hugging Face Spaces: **[WayScience/gene-dependency-explorer](https://huggingface.co/spaces/WayScience/gene-dependency-explorer)**
 
 ### Run locally
 
 ```sh
+# Install uv if needed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 cd 9.webapp
 uv run streamlit run app.py
 ```
 
-`uv` will create a virtual environment and install all dependencies automatically on first run.
+`uv` creates and populates the virtual environment automatically on first run.
 
 ### Deploy (headless)
 
 ```sh
 cd 9.webapp
-just deploy
+PORT=8501 uv run streamlit run app.py \
+  --server.address 0.0.0.0 \
+  --server.headless true \
+  --server.port "$PORT" \
+  --server.fileWatcherType none
 ```
-
-This runs Streamlit on `0.0.0.0:8501` by default. Override the port with `PORT=8080 just deploy`.
 
 ### Data
 
-The webapp reads pre-computed result files that are committed to the repository:
+All data files the webapp needs are committed in `9.webapp/data/` — no external downloads required. Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are gitignored and only needed to re-run the full analysis pipeline via [`0.data-download/`](0.data-download/).
 
-| File | Description |
-| :--- | :---------- |
-| `9.webapp/data/Model.parquet` | DepMap cell line metadata |
-| `9.webapp/data/pca_embeddings_single_dependencies.parquet` | PCA of raw gene dependency scores |
-| `9.webapp/data/pca_embeddings_latent_reactome.parquet` | PCA of Reactome latent scores |
-| `9.webapp/data/pca_embeddings_latent_corum.parquet` | PCA of CORUM latent scores |
-| `9.webapp/data/pca_embeddings_latent_drug.parquet` | PCA of drug latent scores |
-| `5.drug-dependency/results/all_*_results.parquet` | Full latent score tables (scores + spider plots) |
-
-Raw DepMap files (`CRISPRGeneEffect.parquet` etc.) are **not** required by the webapp and are gitignored. Download them separately via [`0.data-download/`](0.data-download/) if you need to re-run the analysis pipeline.
+See [`9.webapp/README.md`](9.webapp/README.md) for full details.
